@@ -31,17 +31,17 @@ button,input{font:inherit}button{min-height:44px;border:1px solid #d1d5db;border
 <header><div><strong>MEU TREINO</strong><div class="sub">Diário de musculação</div></div><button id="reset">Limpar</button></header>
 <div id="installBox" class="install"><b>📲 Instalar no iPhone</b><div class="sub">No Safari: Compartilhar → Adicionar à Tela de Início.</div></div>
 <div class="tabs"><button id="tabA" class="primary">A · Superiores</button><button id="tabB">B · Inferiores</button></div>
-<section class="timer"><div class="muted">DESCANSO</div><div id="time" class="time">01:30</div><div class="actions"><button id="start" class="primary">Iniciar</button><button id="pause">Pausar</button><button id="plus">+30s</button><button id="resetTimer">Resetar</button></div></section>
+<section class="timer"><div class="muted">DESCANSO</div><div id="time" class="time">00:40</div><div class="actions"><button id="start" class="primary">Iniciar</button><button id="pause">Pausar</button><button id="plus">+30s</button><button id="resetTimer">Resetar</button></div></section>
 <div id="stats" class="stats"></div><section id="workout"></section>
 </main>
 <script>
-const defaults={A:[["Supino máquina",3,10,12,90],["Puxada frontal",3,10,12,90],["Remada máquina",3,10,12,90],["Desenvolvimento máquina",3,10,12,90],["Rosca bíceps",3,10,12,60],["Tríceps máquina",3,10,12,60]],B:[["Leg press",3,10,12,120],["Cadeira extensora",3,10,12,90],["Cadeira flexora",3,10,12,90],["Cadeira abdutora",3,12,15,60],["Cadeira adutora",3,12,15,60],["Panturrilha",3,12,15,60]]};
+const defaults={A:[["Supino máquina",3,10,12,40],["Puxada frontal",3,10,12,40],["Remada máquina",3,10,12,40],["Desenvolvimento máquina",3,10,12,40],["Rosca bíceps",3,10,12,40],["Tríceps máquina",3,10,12,40]],B:[["Leg press",3,10,12,40],["Cadeira extensora",3,10,12,40],["Cadeira flexora",3,10,12,40],["Cadeira abdutora",3,12,15,40],["Cadeira adutora",3,12,15,40],["Panturrilha",3,12,15,40]]};
 let state=JSON.parse(localStorage.getItem("meuTreinoPWA")||"null")||{workout:"A",data:defaults,logs:[]};
-let remaining=90,timer=null;
+let remaining=40,timer=null;
 const save=()=>localStorage.setItem("meuTreinoPWA",JSON.stringify(state));
 const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(Math.max(0,s%60)).padStart(2,"0");
 function timerRender(){document.getElementById("time").textContent=fmt(remaining)}
-function startTimer(sec){remaining=Number(sec)||90;clearInterval(timer);timer=setInterval(()=>{remaining--;timerRender();if(remaining<=0){clearInterval(timer);remaining=0;navigator.vibrate?.([150,80,150]);}},1000);timerRender()}
+function startTimer(sec){remaining=Number(sec)||40;clearInterval(timer);timer=setInterval(()=>{remaining--;timerRender();if(remaining<=0){clearInterval(timer);remaining=0;navigator.vibrate?.([150,80,150]);}},1000);timerRender()}
 function render(){
  document.getElementById("tabA").className=state.workout==="A"?"primary":"";
  document.getElementById("tabB").className=state.workout==="B"?"primary":"";
@@ -66,7 +66,7 @@ document.getElementById("tabB").onclick=()=>{state.workout="B";save();render()};
 document.getElementById("start").onclick=()=>{clearInterval(timer);timer=setInterval(()=>{remaining--;timerRender();if(remaining<=0){clearInterval(timer);remaining=0;navigator.vibrate?.([150,80,150])}},1000)};
 document.getElementById("pause").onclick=()=>clearInterval(timer);
 document.getElementById("plus").onclick=()=>{remaining+=30;timerRender()};
-document.getElementById("resetTimer").onclick=()=>{clearInterval(timer);remaining=90;timerRender()};
+document.getElementById("resetTimer").onclick=()=>{clearInterval(timer);remaining=40;timerRender()};
 document.getElementById("reset").onclick=()=>{if(confirm("Apagar todos os registros e voltar ao padrão?")){localStorage.removeItem("meuTreinoPWA");location.reload()}};
 if(!("serviceWorker" in navigator)) document.getElementById("installBox").classList.add("show");
 window.addEventListener("load",()=>navigator.serviceWorker?.register("./sw.js"));
