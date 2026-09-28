@@ -9,67 +9,174 @@
 <meta name="apple-mobile-web-app-title" content="Meu Treino">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="css/app.css">
 <title>Meu Treino</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f5;color:#111827}
-main{max-width:760px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px}.sub{color:#6b7280;font-size:14px}
-button,input{font:inherit}button{min-height:44px;border:1px solid #d1d5db;border-radius:11px;background:white;padding:8px 13px;font-weight:600}button.primary{background:#111827;color:white;border-color:#111827}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
-.timer,.exercise,.stat{background:white;border:1px solid #e5e7eb;border-radius:16px}.timer{text-align:center;padding:18px;margin-bottom:14px}
-.time{font-size:44px;font-weight:800;letter-spacing:1px;margin:4px 0 10px}.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.stat{text-align:center;padding:12px}.stat b{font-size:18px}
-.exercise{padding:15px;margin:12px 0}.exercise-head{display:flex;justify-content:space-between;gap:10px}.muted{color:#6b7280;font-size:13px}
-.set-label{margin-top:12px}.set-row{display:grid;grid-template-columns:28px 1fr 1fr 1fr 45px;gap:7px;align-items:center;margin-top:7px}.set-row input{width:100%;min-width:0;padding:10px 7px;border:1px solid #d1d5db;border-radius:9px;background:#fafafa;font-size:16px}.done{padding:5px!important}
-.install{display:none;background:#eef2ff;border:1px solid #c7d2fe;border-radius:14px;padding:12px;margin-bottom:14px}
-.install.show{display:block}.install button{margin-top:8px}
-@media(max-width:520px){.set-row{grid-template-columns:24px 1fr 1fr 44px}.rir{display:none}.stats{grid-template-columns:1fr 1fr}.time{font-size:38px}}
-</style>
 </head>
 <body>
+<div id="toast" class="toast" role="status"></div>
+<header class="topbar">
+  <div><strong>MEU TREINO</strong><div class="sub">Diário de musculação</div></div>
+  <button id="settingsBtn" class="icon-btn" aria-label="Configurações">⚙️</button>
+</header>
+
 <main id="app">
-<header><div><strong>MEU TREINO</strong><div class="sub">Diário de musculação</div></div><button id="reset">Limpar</button></header>
-<div id="installBox" class="install"><b>📲 Instalar no iPhone</b><div class="sub">No Safari: Compartilhar → Adicionar à Tela de Início.</div></div>
-<div class="tabs"><button id="tabA" class="primary">A · Superiores</button><button id="tabB">B · Inferiores</button></div>
-<section class="timer"><div class="muted">DESCANSO</div><div id="time" class="time">00:40</div><div class="actions"><button id="start" class="primary">Iniciar</button><button id="pause">Pausar</button><button id="plus">+30s</button><button id="resetTimer">Resetar</button></div></section>
-<div id="stats" class="stats"></div><section id="workout"></section>
+  <section id="homeView" class="view active">
+    <div id="installBox" class="install">
+      <b>📲 Instalar no iPhone</b>
+      <div class="sub">No Safari: Compartilhar → Adicionar à Tela de Início.</div>
+    </div>
+    <div id="dashboard" class="dashboard"></div>
+    <button id="startWorkoutBtn" class="primary big-btn">▶ INICIAR TREINO</button>
+    <div class="section-title">Acesso rápido</div>
+    <div class="quick-grid">
+      <button data-view="historyView">📚 Histórico</button>
+      <button data-view="weightView">⚖️ Peso</button>
+      <button data-view="photosView">📸 Fotos</button>
+      <button data-view="evolutionView">📈 Evolução</button>
+    </div>
+  </section>
+
+  <section id="workoutView" class="view">
+    <div class="workout-header">
+      <div>
+        <div class="eyebrow">TREINO</div>
+        <h1 id="workoutTitle">A — Superiores</h1>
+      </div>
+      <button id="finishWorkoutBtn" class="success">Finalizar</button>
+    </div>
+    <div class="tabs">
+      <button id="tabA">A · Superiores</button>
+      <button id="tabB">B · Inferiores</button>
+    </div>
+
+    <section class="timer">
+      <div class="muted">DESCANSO</div>
+      <div id="time" class="time">00:40</div>
+      <div class="timer-state" id="timerState">Pronto</div>
+      <div class="actions">
+        <button id="startTimer" class="primary">Iniciar</button>
+        <button id="pauseTimer">Pausar</button>
+        <button id="resumeTimer">Retomar</button>
+        <button id="resetTimer">Reiniciar</button>
+        <button id="plus10">+10s</button>
+        <button id="plus30">+30s</button>
+      </div>
+    </section>
+
+    <div id="workoutSummary" class="stats"></div>
+    <section id="workoutExercises"></section>
+    <section class="card cardio-card">
+      <div class="section-title">🏃 CARDIO</div>
+      <div class="form-grid">
+        <label>Tipo<select id="cardioType"><option>Esteira</option><option>Bicicleta</option><option>Elíptico</option><option>Caminhada</option><option>Outro</option></select></label>
+        <label>Tempo (min)<input id="cardioTime" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Distância (km)<input id="cardioDistance" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        <label>Calorias<input id="cardioCalories" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Velocidade média<input id="cardioSpeed" type="number" min="0" step="0.1" inputmode="decimal"></label>
+      </div>
+      <label>Observações<textarea id="cardioNotes" rows="2" placeholder="Observações do cardio"></textarea></label>
+    </section>
+    <label class="card notes-card">Observações do treino<textarea id="workoutNotes" rows="3" placeholder="Como foi o treino hoje?"></textarea></label>
+  </section>
+
+  <section id="historyView" class="view">
+    <div class="page-head"><h1>Histórico</h1></div>
+    <div id="historyList"></div>
+    <div class="section-title">Histórico por exercício</div>
+    <select id="exerciseHistorySelect"></select>
+    <div id="exerciseHistory"></div>
+  </section>
+
+  <section id="weightView" class="view">
+    <div class="page-head"><h1>Peso</h1></div>
+    <div id="weightStats" class="stats"></div>
+    <div class="card">
+      <div class="section-title">Novo registro</div>
+      <div class="form-grid">
+        <label>Peso (kg)<input id="weightInput" type="number" min="0" step="0.1" inputmode="decimal"></label>
+        <label>Data<input id="weightDate" type="date"></label>
+        <label>Horário<input id="weightTime" type="time"></label>
+      </div>
+      <label>Observação<textarea id="weightNotes" rows="2"></textarea></label>
+      <button id="addWeightBtn" class="primary">Salvar peso</button>
+    </div>
+    <div class="card chart-card"><canvas id="weightChart" height="220"></canvas></div>
+    <div id="weightList"></div>
+  </section>
+
+  <section id="photosView" class="view">
+    <div class="page-head"><h1>Fotos</h1></div>
+    <div class="card">
+      <div class="section-title">Nova foto de evolução</div>
+      <label>Foto<input id="photoFile" type="file" accept="image/*" capture="environment"></label>
+      <div class="form-grid">
+        <label>Data<input id="photoDate" type="date"></label>
+        <label>Tipo<select id="photoType"><option>Frente</option><option>Lado</option><option>Costas</option><option>Outro</option></select></label>
+      </div>
+      <label>Observação<textarea id="photoNotes" rows="2"></textarea></label>
+      <button id="addPhotoBtn" class="primary">Salvar foto</button>
+      <div class="muted small">A foto fica somente no armazenamento local deste dispositivo.</div>
+    </div>
+    <div id="photoGallery" class="photo-grid"></div>
+    <div class="card">
+      <div class="section-title">Comparar duas fotos</div>
+      <div class="form-grid">
+        <select id="comparePhotoA"></select>
+        <select id="comparePhotoB"></select>
+      </div>
+      <div id="photoCompare" class="compare"></div>
+    </div>
+  </section>
+
+  <section id="evolutionView" class="view">
+    <div class="page-head"><h1>Evolução</h1></div>
+    <div id="evolutionStats" class="stats stats-wide"></div>
+    <div class="card chart-card"><div class="section-title">Peso</div><canvas id="evolutionWeightChart" height="220"></canvas></div>
+    <div class="card chart-card"><div class="section-title">Volume por treino</div><canvas id="volumeChart" height="220"></canvas></div>
+    <div id="exerciseProgress" class="card"></div>
+  </section>
+
+  <section id="calendarView" class="view">
+    <div class="page-head"><h1>Calendário</h1></div>
+    <div class="calendar-controls"><button id="prevMonth">‹</button><strong id="calendarMonth"></strong><button id="nextMonth">›</button></div>
+    <div id="calendarGrid" class="calendar-grid"></div>
+    <div id="calendarDetails"></div>
+  </section>
+
+  <section id="settingsView" class="view">
+    <div class="page-head"><h1>Configurações</h1></div>
+    <div class="card">
+      <div class="section-title">Cronômetro</div>
+      <label>Descanso padrão (segundos)<input id="defaultRest" type="number" min="1" max="600"></label>
+      <label class="switch"><input id="soundEnabled" type="checkbox"><span>🔊 Apito ao terminar</span></label>
+      <label class="switch"><input id="autoStartRest" type="checkbox"><span>Iniciar descanso automaticamente</span></label>
+    </div>
+    <div class="card">
+      <div class="section-title">Aparência</div>
+      <select id="themeSelect"><option value="auto">⚙️ Automático</option><option value="light">☀️ Claro</option><option value="dark">🌙 Escuro</option></select>
+    </div>
+    <div class="card">
+      <div class="section-title">Backup</div>
+      <p class="muted">O backup inclui treinos, cargas, peso, cardio, configurações e fotos quando o navegador permitir.</p>
+      <div class="actions"><button id="exportBackup" class="primary">⬇️ Exportar backup</button><button id="importBackup">⬆️ Importar backup</button><input id="backupFile" type="file" accept="application/json" hidden></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Dados</div>
+      <button id="addExerciseBtn">+ Adicionar exercício</button>
+      <button id="resetAllBtn" class="danger">Apagar todos os dados</button>
+    </div>
+  </section>
 </main>
-<script>
-const defaults={A:[["Supino máquina",3,10,12,40],["Puxada frontal",3,10,12,40],["Remada máquina",3,10,12,40],["Desenvolvimento máquina",3,10,12,40],["Rosca bíceps",3,10,12,40],["Tríceps máquina",3,10,12,40]],B:[["Leg press",3,10,12,40],["Cadeira extensora",3,10,12,40],["Cadeira flexora",3,10,12,40],["Cadeira abdutora",3,12,15,40],["Cadeira adutora",3,12,15,40],["Panturrilha",3,12,15,40]]};
-let state=JSON.parse(localStorage.getItem("meuTreinoPWA")||"null")||{workout:"A",data:defaults,logs:[]};
-let remaining=40,timer=null;
-const save=()=>localStorage.setItem("meuTreinoPWA",JSON.stringify(state));
-const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(Math.max(0,s%60)).padStart(2,"0");
-function timerRender(){document.getElementById("time").textContent=fmt(remaining)}
-function startTimer(sec){remaining=Number(sec)||40;clearInterval(timer);timer=setInterval(()=>{remaining--;timerRender();if(remaining<=0){clearInterval(timer);remaining=0;navigator.vibrate?.([150,80,150]);}},1000);timerRender()}
-function render(){
- document.getElementById("tabA").className=state.workout==="A"?"primary":"";
- document.getElementById("tabB").className=state.workout==="B"?"primary":"";
- const logs=state.logs.filter(x=>x.workout===state.workout);
- document.getElementById("stats").innerHTML=`<div class="stat"><b>${logs.length}</b><div class="muted">séries</div></div><div class="stat"><b>${logs.reduce((a,x)=>a+(+x.weight||0),0).toFixed(0)} kg</b><div class="muted">carga</div></div><div class="stat"><b>${logs.length?new Date(logs.at(-1).date).toLocaleDateString("pt-BR"):"—"}</b><div class="muted">último registro</div></div>`;
- const box=document.getElementById("workout");box.innerHTML="";
- state.data[state.workout].forEach((e,ei)=>{
-  const card=document.createElement("article");card.className="exercise";
-  card.innerHTML=`<div class="exercise-head"><div><strong>${e[0]}</strong><div class="muted">${e[1]} séries · ${e[2]}–${e[3]} reps · descanso ${e[4]}s</div></div><button class="edit">Editar</button></div><div class="muted set-label">Série · Carga · Reps · RIR</div>`;
-  for(let s=1;s<=e[1];s++){
-   const row=document.createElement("div");row.className="set-row";row.innerHTML=`<b>${s}</b><input inputmode="decimal" placeholder="kg"><input inputmode="numeric" placeholder="reps"><input class="rir" inputmode="numeric" placeholder="RIR"><button class="done">✓</button>`;
-   const ins=row.querySelectorAll("input");ins.forEach((x,i)=>{x.value=e[5]?.[s-1]?.[i]||"";x.addEventListener("change",()=>{e[5]=e[5]||[];e[5][s-1]=[...ins].map(y=>y.value);save()})});
-   row.querySelector(".done").onclick=()=>{const v=[...ins].map(x=>x.value);state.logs.push({date:new Date().toISOString(),workout:state.workout,exercise:e[0],set:s,weight:v[0],reps:v[1],rir:v[2]});save();render();startTimer(e[4])};
-   card.appendChild(row);
-  }
-  card.querySelector(".edit").onclick=()=>{let n=prompt("Nome:",e[0]);if(n===null)return;let sets=+prompt("Séries:",e[1]),min=+prompt("Reps mínimas:",e[2]),max=+prompt("Reps máximas:",e[3]),rest=+prompt("Descanso (segundos):",e[4]);if([sets,min,max,rest].some(x=>!Number.isFinite(x)||x<1))return;e[0]=n;e[1]=sets;e[2]=min;e[3]=max;e[4]=rest;e[5]=[];save();render()};
-  box.appendChild(card);
- });
-}
-document.getElementById("tabA").onclick=()=>{state.workout="A";save();render()};
-document.getElementById("tabB").onclick=()=>{state.workout="B";save();render()};
-document.getElementById("start").onclick=()=>{clearInterval(timer);timer=setInterval(()=>{remaining--;timerRender();if(remaining<=0){clearInterval(timer);remaining=0;navigator.vibrate?.([150,80,150])}},1000)};
-document.getElementById("pause").onclick=()=>clearInterval(timer);
-document.getElementById("plus").onclick=()=>{remaining+=30;timerRender()};
-document.getElementById("resetTimer").onclick=()=>{clearInterval(timer);remaining=40;timerRender()};
-document.getElementById("reset").onclick=()=>{if(confirm("Apagar todos os registros e voltar ao padrão?")){localStorage.removeItem("meuTreinoPWA");location.reload()}};
-if(!("serviceWorker" in navigator)) document.getElementById("installBox").classList.add("show");
-window.addEventListener("load",()=>navigator.serviceWorker?.register("./sw.js"));
-render();timerRender();
-</script>
-</body></html>
+
+<nav class="bottom-nav" id="bottomNav">
+  <button data-view="homeView">⌂<span>Início</span></button>
+  <button data-view="workoutView">🏋️<span>Treino</span></button>
+  <button data-view="historyView">📚<span>Histórico</span></button>
+  <button data-view="weightView">⚖️<span>Peso</span></button>
+  <button data-view="evolutionView">📈<span>Evolução</span></button>
+  <button data-view="calendarView">📅<span>Calendário</span></button>
+</nav>
+
+<script src="js/app.js"></script>
+</body>
+</html>
