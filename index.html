@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meu Treino">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Meu Treino</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f5;color:#111827}
+main{max-width:760px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}.sub{color:#6b7280;font-size:14px}
+button,input{font:inherit}button{min-height:44px;border:1px solid #d1d5db;border-radius:11px;background:white;padding:8px 13px;font-weight:600}button.primary{background:#111827;color:white;border-color:#111827}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.timer,.exercise,.stat{background:white;border:1px solid #e5e7eb;border-radius:16px}.timer{text-align:center;padding:18px;margin-bottom:14px}
+.time{font-size:44px;font-weight:800;letter-spacing:1px;margin:4px 0 10px}.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.stat{text-align:center;padding:12px}.stat b{font-size:18px}
+.exercise{padding:15px;margin:12px 0}.exercise-head{display:flex;justify-content:space-between;gap:10px}.muted{color:#6b7280;font-size:13px}
+.set-label{margin-top:12px}.set-row{display:grid;grid-template-columns:28px 1fr 1fr 1fr 45px;gap:7px;align-items:center;margin-top:7px}.set-row input{width:100%;min-width:0;padding:10px 7px;border:1px solid #d1d5db;border-radius:9px;background:#fafafa;font-size:16px}.done{padding:5px!important}
+.install{display:none;background:#eef2ff;border:1px solid #c7d2fe;border-radius:14px;padding:12px;margin-bottom:14px}
+.install.show{display:block}.install button{margin-top:8px}
+@media(max-width:520px){.set-row{grid-template-columns:24px 1fr 1fr 44px}.rir{display:none}.stats{grid-template-columns:1fr 1fr}.time{font-size:38px}}
+</style>
+</head>
+<body>
+<main id="app">
+<header><div><strong>MEU TREINO</strong><div class="sub">Diário de musculação</div></div><button id="reset">Limpar</button></header>
+<div id="installBox" class="install"><b>📲 Instalar no iPhone</b><div class="sub">No Safari: Compartilhar → Adicionar à Tela de Início.</div></div>
+<div class="tabs"><button id="tabA" class="primary">A · Superiores</button><button id="tabB">B · Inferiores</button></div>
+<section class="timer"><div class="muted">DESCANSO</div><div id="time" class="time">01:30</div><div class="actions"><button id="start" class="primary">Iniciar</button><button id="pause">Pausar</button><button id="plus">+30s</button><button id="resetTimer">Resetar</button></div></section>
+<div id="stats" class="stats"></div><section id="workout"></section>
+</main>
+<script>
+const defaults={A:[["Supino máquina",3,10,12,90],["Puxada frontal",3,10,12,90],["Remada máquina",3,10,12,90],["Desenvolvimento máquina",3,10,12,90],["Rosca bíceps",3,10,12,60],["Tríceps máquina",3,10,12,60]],B:[["Leg press",3,10,12,120],["Cadeira extensora",3,10,12,90],["Cadeira flexora",3,10,12,90],["Cadeira abdutora",3,12,15,60],["Cadeira adutora",3,12,15,60],["Panturrilha",3,12,15,60]]};
+let state=JSON.parse(localStorage.getItem("meuTreinoPWA")||"null")||{workout:"A",data:defaults,logs:[]};
+let remaining=90,timer=null;
+const save=()=>localStorage.setItem("meuTreinoPWA",JSON.stringify(state));
+const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(Math.max(0,s%60)).padStart(2,"0");
+function timerRender(){document.getElementById("time").textContent=fmt(remaining)}
+function startTimer(sec){remaining=Number(sec)||90;clearInterval(timer);timer=setInterval(()=>{remaining--;timerRender();if(remaining<=0){clearInterval(timer);remaining=0;navigator.vibrate?.([150,80,150]);}},1000);timerRender()}
+function render(){
+ document.getElementById("tabA").className=state.workout==="A"?"primary":"";
+ document.getElementById("tabB").className=state.workout==="B"?"primary":"";
+ const logs=state.logs.filter(x=>x.workout===state.workout);
+ document.getElementById("stats").innerHTML=`<div class="stat"><b>${logs.length}</b><div class="muted">séries</div></div><div class="stat"><b>${logs.reduce((a,x)=>a+(+x.weight||0),0).toFixed(0)} kg</b><div class="muted">carga</div></div><div class="stat"><b>${logs.length?new Date(logs.at(-1).date).toLocaleDateString("pt-BR"):"—"}</b><div class="muted">último registro</div></div>`;
+ const box=document.getElementById("workout");box.innerHTML="";
+ state.data[state.workout].forEach((e,ei)=>{
+  const card=document.createElement("article");card.className="exercise";
+  card.innerHTML=`<div class="exercise-head"><div><strong>${e[0]}</strong><div class="muted">${e[1]} séries · ${e[2]}–${e[3]} reps · descanso ${e[4]}s</div></div><button class="edit">Editar</button></div><div class="muted set-label">Série · Carga · Reps · RIR</div>`;
+  for(let s=1;s<=e[1];s++){
+   const row=document.createElement("div");row.className="set-row";row.innerHTML=`<b>${s}</b><input inputmode="decimal" placeholder="kg"><input inputmode="numeric" placeholder="reps"><input class="rir" inputmode="numeric" placeholder="RIR"><button class="done">✓</button>`;
+   const ins=row.querySelectorAll("input");ins.forEach((x,i)=>{x.value=e[5]?.[s-1]?.[i]||"";x.addEventListener("change",()=>{e[5]=e[5]||[];e[5][s-1]=[...ins].map(y=>y.value);save()})});
+   row.querySelector(".done").onclick=()=>{const v=[...ins].map(x=>x.value);state.logs.push({date:new Date().toISOString(),workout:state.workout,exercise:e[0],set:s,weight:v[0],reps:v[1],rir:v[2]});save();render();startTimer(e[4])};
+   card.appendChild(row);
+  }
+  card.querySelector(".edit").onclick=()=>{let n=prompt("Nome:",e[0]);if(n===null)return;let sets=+prompt("Séries:",e[1]),min=+prompt("Reps mínimas:",e[2]),max=+prompt("Reps máximas:",e[3]),rest=+prompt("Descanso (segundos):",e[4]);if([sets,min,max,rest].some(x=>!Number.isFinite(x)||x<1))return;e[0]=n;e[1]=sets;e[2]=min;e[3]=max;e[4]=rest;e[5]=[];save();render()};
+  box.appendChild(card);
+ });
+}
+document.getElementById("tabA").onclick=()=>{state.workout="A";save();render()};
+document.getElementById("tabB").onclick=()=>{state.workout="B";save();render()};
+document.getElementById("start").onclick=()=>{clearInterval(timer);timer=setInterval(()=>{remaining--;timerRender();if(remaining<=0){clearInterval(timer);remaining=0;navigator.vibrate?.([150,80,150])}},1000)};
+document.getElementById("pause").onclick=()=>clearInterval(timer);
+document.getElementById("plus").onclick=()=>{remaining+=30;timerRender()};
+document.getElementById("resetTimer").onclick=()=>{clearInterval(timer);remaining=90;timerRender()};
+document.getElementById("reset").onclick=()=>{if(confirm("Apagar todos os registros e voltar ao padrão?")){localStorage.removeItem("meuTreinoPWA");location.reload()}};
+if(!("serviceWorker" in navigator)) document.getElementById("installBox").classList.add("show");
+window.addEventListener("load",()=>navigator.serviceWorker?.register("./sw.js"));
+render();timerRender();
+</script>
+</body></html>
